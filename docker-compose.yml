@@ -1,0 +1,51 @@
+#version: '2'
+services:
+
+  # Node Service
+  nuxt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: nuxt
+    restart: always
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+      HOST: 0.0.0.0                 # важно для dev-сервера
+      CHOKIDAR_USEPOLLING: true   # ← polling для отслеживания файлов
+    working_dir: /var/www
+    expose:
+      - 3000
+    volumes:
+      - ./:/var/www
+      - /var/www/node_modules       # не затираем node_modules из образа
+    networks:
+      - app-network
+      - shop-network
+
+  # Nginx Service
+  web:
+    image: nginx:alpine
+    depends_on:
+      - nuxt
+    container_name: web-client
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - app-network
+      - shop-network
+
+
+# Docker Networks
+networks:
+  app-network:
+    driver: bridge
+  shop-network:
+      external: true

@@ -1,4 +1,15 @@
-FROM ubuntu:latest
-LABEL authors="Роман"
+FROM node:24-alpine
 
-ENTRYPOINT ["top", "-b"]
+WORKDIR /var/www
+
+# Копируем только файлы зависимостей, чтобы закешировать слой
+COPY package*.json ./
+RUN npm ci
+
+# Код будет монтироваться через volume, поэтому COPY . . не делаем
+# (чтобы не захламлять образ, можно и оставить, но он всё равно перезапишется)
+
+EXPOSE 3000
+
+# Запускаем dev-сервер с HMR (необходимо, чтобы Nuxt слушал 0.0.0.0 внутри контейнера)
+CMD ["npm", "run", "dev"]
